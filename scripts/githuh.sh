@@ -1,29 +1,47 @@
 #!/usr/bin/env bash
 set -e
 
-# Colors
+# ── Styling (minimal, modern) ────────────────────────────────────────────
 RESET="$(tput sgr0)"
-CYAN="$(tput setaf 38)"
+DIM="$(tput dim)"
+BLUE="$(tput setaf 4)"   # royal-ish blue on most terminals
+BOLD="$(tput bold)"
 
-printf "${CYAN}── 📁 Directory ────────────────────────────────────────────────────────${RESET}\n"
-printf "${CYAN} CWD: ${RESET}%s\n" "$(pwd)"
-echo
+SECTION="»"
 
-# Check if we're inside a git repo
+# ── Directory ────────────────────────────────────────────────────────────
+echo "${BLUE}${BOLD}${SECTION} Directory${RESET}"
+echo "${DIM}  CWD:${RESET} $(pwd)"
+
+# ── Git checks ───────────────────────────────────────────────────────────
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    # Git identity
-        printf "${CYAN}── 👤 Git Identity ─────────────────────────────────────────────────────${RESET}\n"
-        printf "${CYAN} Name : ${RESET}%s\n" "$(git config user.name)"
-        printf "${CYAN} Email: ${RESET}%s\n" "$(git config user.email)"
-        echo
 
-    # Git status
-        printf "${CYAN}── 🔧 Git Status ───────────────────────────────────────────────────────${RESET}\n"
-        git status
+  # Git identity
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Identity${RESET}"
+  echo "  Name : $(git config user.name)"
+  echo "  Email: $(git config user.email)"
 
-    # Fetch
-        printf "${CYAN}── 🌐 Git Fetch ────────────────────────────────────────────────────────${RESET}\n"
-        git fetch
+  # Git status (let git control formatting)
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Status${RESET}"
+  git status --short
+
+  # Fetch
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Fetch${RESET}"
+  git fetch
+
+  # Diff vs main
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Diff vs main${RESET}"
+  if git show-ref --verify --quiet refs/heads/main; then
+    git diff main --stat
+  else
+    echo "${DIM}  (no main branch)${RESET}"
+  fi
+
 else
-    echo "⚠️  Not a Git repository"
+  echo
+  echo "⚠️  Not a Git repository"
 fi
