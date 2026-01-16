@@ -1,1 +1,0 @@
-/home/nh2seven/.bashrc
