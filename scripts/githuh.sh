@@ -7,8 +7,10 @@ DIM="$(tput dim)"
 BLUE="$(tput setaf 4)"
 BOLD="$(tput bold)"
 NEON_GREEN="$(tput setaf 10)"
-
 SECTION="»"
+
+#
+MAIN_BRANCH=main
 
 echo "${NEON_GREEN}─────────────────────────────────────────────────────────────────────────────────────${RESET}"
 
@@ -45,13 +47,13 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "${BLUE}${BOLD}${SECTION} Git Fetch${RESET}"
   git fetch
 
-  # Diff vs main
+  # Diff vs BRANCH
   echo
-  echo "${BLUE}${BOLD}${SECTION} Git Diff vs main${RESET}"
+  echo "${BLUE}${BOLD}${SECTION} Git Diff vs ${MAIN_BRANCH}${RESET}"
   if git show-ref --verify --quiet refs/heads/main; then
-    git diff main --stat
+    git diff ${MAIN_BRANCH} --stat
   else
-    echo "${DIM}  (no main branch)${RESET}"
+    echo "${DIM}  (no ${MAIN_BRANCH} branch)${RESET}"
   fi
 
 else
