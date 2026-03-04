@@ -9,8 +9,13 @@ BOLD="$(tput bold)"
 NEON_GREEN="$(tput setaf 10)"
 SECTION="»"
 
-#
 MAIN_BRANCH=main
+OVERRIDE_BRANCH=sprint-23
+
+# If CWD is /home/nh2seven/aiNions/Code/nion/agent, set MAIN_BRANCH to OVERRIDE_BRANCH
+if [[ "$(pwd)" == "/home/nh2seven/aiNions/Code/nion/agent" ]]; then
+  MAIN_BRANCH="$OVERRIDE_BRANCH"
+fi
 
 echo "${NEON_GREEN}─────────────────────────────────────────────────────────────────────────────────────${RESET}"
 
