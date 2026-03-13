@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# ── Styling (minimal, modern) ────────────────────────────────────────────
+# ── Styling (minimal, modern) ───────────────────────────────────────────────────────────
 RESET="$(tput sgr0)"
 DIM="$(tput dim)"
 BLUE="$(tput setaf 4)"
@@ -9,17 +9,27 @@ BOLD="$(tput bold)"
 NEON_GREEN="$(tput setaf 10)"
 SECTION="»"
 
+# ── Override Branches ───────────────────────────────────────────────────────────
 MAIN_BRANCH=main
 OVERRIDE_BRANCH=sprint-23
+OVERRIDE_PATHS=(
+  "/home/nh2seven/aiNions/Code/nion/agent"
+  "/home/nh2seven/aiNions/Code/nion/consumer"
+  "/home/nh2seven/aiNions/Code/nion/controller"
+)
+CURRENT_DIR="$(pwd)"
 
 # If CWD is /home/nh2seven/aiNions/Code/nion/agent, set MAIN_BRANCH to OVERRIDE_BRANCH
-if [[ "$(pwd)" == "/home/nh2seven/aiNions/Code/nion/agent" ]]; then
-  MAIN_BRANCH="$OVERRIDE_BRANCH"
-fi
+for TARGET_PATH in "${OVERRIDE_PATHS[@]}"; do
+  if [[ "$CURRENT_DIR" == "$TARGET_PATH"* ]]; then
+    MAIN_BRANCH="$OVERRIDE_BRANCH"
+    break
+  fi
+done
 
 echo "${NEON_GREEN}─────────────────────────────────────────────────────────────────────────────────────${RESET}"
 
-# ── Location (CWD + Repo) ────────────────────────────────────────────────
+# ── Location (CWD + Repo) ───────────────────────────────────────────────────────────
 echo "${BLUE}${BOLD}${SECTION} Location${RESET}"
 echo "${DIM}  CWD  :${RESET} $(pwd)"
 
