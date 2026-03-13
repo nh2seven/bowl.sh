@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# Pass flags (-f, -p) through to gif (githuh.sh)
+FLAGS="$@"
+
 DIM="$(tput dim)"
 NEON_GREEN="$(tput setaf 10)"
 RESET="$(tput sgr0)"
@@ -13,13 +16,13 @@ ssh-add ~/.ssh/nion2seven
 ssh-add -l
 
 cd /home/nh2seven/aiNions/Code/nion/agent || exit 0
-/home/nh2seven/Scripts/githuh.sh
+/home/nh2seven/Scripts/githuh.sh $FLAGS
 
 cd /home/nh2seven/aiNions/Code/nion/consumer || exit 0
-/home/nh2seven/Scripts/githuh.sh
+/home/nh2seven/Scripts/githuh.sh $FLAGS
 
 cd /home/nh2seven/aiNions/Code/nion/controller || exit 0
-/home/nh2seven/Scripts/githuh.sh
+/home/nh2seven/Scripts/githuh.sh $FLAGS
 
 echo "${NEON_GREEN}─────────────────────────────────────────────────────────────────────────────────────${RESET}"
 

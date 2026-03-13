@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
+# ── Flags ─────────────────────────────────────────────────────────────────────
+# -f  fetch from remote
+# -p  fetch + pull from remote
+DO_FETCH=false
+DO_PULL=false
+while getopts "fp" opt; do
+  case $opt in
+    f) DO_FETCH=true ;;
+    p) DO_FETCH=true; DO_PULL=true ;;
+    *) ;;
+  esac
+done
+
 # ── Styling (minimal, modern) ───────────────────────────────────────────────────────────
 RESET="$(tput sgr0)"
 DIM="$(tput dim)"
@@ -14,7 +27,7 @@ MAIN_BRANCH=main
 OVERRIDE_BRANCH=sprint-23
 OVERRIDE_PATHS=(
   "/home/nh2seven/aiNions/Code/nion/agent"
-  "/home/nh2seven/aiNions/Code/nion/consumer"
+  # "/home/nh2seven/aiNions/Code/nion/consumer"
   "/home/nh2seven/aiNions/Code/nion/controller"
 )
 CURRENT_DIR="$(pwd)"
@@ -57,10 +70,15 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "${BLUE}${BOLD}${SECTION} Git Status${RESET}"
   git status --short
 
-  # Fetch
+  # Available Branches
   echo
-  echo "${BLUE}${BOLD}${SECTION} Git Fetch${RESET}"
-  git fetch
+  echo "${BLUE}${BOLD}${SECTION} Git Branch${RESET}"
+  git branch
+
+  # Last 3 Commits
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Commits${RESET}"
+  git log --oneline -3
 
   # Diff vs BRANCH
   echo
@@ -69,6 +87,18 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git diff ${MAIN_BRANCH} --stat
   else
     echo "${DIM}  (no ${MAIN_BRANCH} branch)${RESET}"
+  fi
+
+  # Fetch / Pull (conditional, at the end)
+  if $DO_FETCH; then
+    echo
+    echo "${BLUE}${BOLD}${SECTION} Git Fetch${RESET}"
+    git fetch
+  fi
+  if $DO_PULL; then
+    echo
+    echo "${BLUE}${BOLD}${SECTION} Git Pull${RESET}"
+    git pull
   fi
 
 else
