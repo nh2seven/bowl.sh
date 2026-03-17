@@ -14,15 +14,16 @@ while getopts "fp" opt; do
   esac
 done
 
-# ── Styling (minimal, modern) ───────────────────────────────────────────────────────────
+# ── Styling ────────────────────────────────────────────────────────────────────
 RESET="$(tput sgr0)"
 DIM="$(tput dim)"
 BLUE="$(tput setaf 4)"
 BOLD="$(tput bold)"
 NEON_GREEN="$(tput setaf 10)"
+RED="$(tput setaf 1)"
 SECTION="»"
 
-# ── Override Branches ───────────────────────────────────────────────────────────
+# ── Override Branches ──────────────────────────────────────────────────────────
 MAIN_BRANCH=main
 OVERRIDE_BRANCH=sprint-23
 OVERRIDE_PATHS=(
@@ -32,7 +33,6 @@ OVERRIDE_PATHS=(
 )
 CURRENT_DIR="$(pwd)"
 
-# If CWD is /home/nh2seven/aiNions/Code/nion/agent, set MAIN_BRANCH to OVERRIDE_BRANCH
 for TARGET_PATH in "${OVERRIDE_PATHS[@]}"; do
   if [[ "$CURRENT_DIR" == "$TARGET_PATH"* ]]; then
     MAIN_BRANCH="$OVERRIDE_BRANCH"
@@ -42,68 +42,134 @@ done
 
 echo "${NEON_GREEN}─────────────────────────────────────────────────────────────────────────────────────${RESET}"
 
-# ── Location (CWD + Repo) ───────────────────────────────────────────────────────────
-echo "${BLUE}${BOLD}${SECTION} Location${RESET}"
-echo "${DIM}  CWD  :${RESET} $(pwd)"
-
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+
   REPO_ROOT="$(git rev-parse --show-toplevel)"
   REPO_NAME="$(basename "$REPO_ROOT")"
-  echo "${DIM}  Repo :${RESET} ${NEON_GREEN}${BOLD}${REPO_NAME}${RESET}"
-fi
 
-# ── Git checks ───────────────────────────────────────────────────────────
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-
-  # Branch (handles detached HEAD)
-  BRANCH="$(git symbolic-ref --quiet --short HEAD || git rev-parse --short HEAD)"
-
-  # Git identity
-  echo
+  # ── Git Identity ─────────────────────────────────────────────────────────────
   echo "${BLUE}${BOLD}${SECTION} Git Identity${RESET}"
-  echo "${DIM}  Name   :${RESET} $(git config user.name)"
-  echo "${DIM}  Email  :${RESET} $(git config user.email)"
-  echo "${DIM}  Branch :${RESET} ${NEON_GREEN}${BOLD}${BRANCH}${RESET}"
+  echo "${DIM}  Name  :${RESET} $(git config user.name)"
+  echo "${DIM}  Email :${RESET} $(git config user.email)"
 
-  # Git status
+  # ── Location ──────────────────────────────────────────────────────────────────
   echo
-  echo "${BLUE}${BOLD}${SECTION} Git Status${RESET}"
-  git status --short
+  echo "${BLUE}${BOLD}${SECTION} Location${RESET}"
+  echo "${DIM}  Repo  :${RESET} ${NEON_GREEN}${BOLD}${REPO_NAME}${RESET}"
+  echo "${DIM}  CWD   :${RESET} $(pwd)"
 
-  # Available Branches
+  # ── Git Branch ───────────────────────────────────────────────────────────────
   echo
   echo "${BLUE}${BOLD}${SECTION} Git Branch${RESET}"
-  git branch
+  ACTIVE_BRANCH=""
+  OTHER_BRANCHES=()
+  while IFS= read -r line; do
+    if [[ "$line" == \** ]]; then
+      ACTIVE_BRANCH="${line:2}"
+    else
+      OTHER_BRANCHES+=("${line:2}")
+    fi
+  done < <(git branch)
+  echo "  ${DIM}Active :${RESET} ${NEON_GREEN}${BOLD}${ACTIVE_BRANCH}${RESET}"
+  for b in "${OTHER_BRANCHES[@]}"; do
+    echo "  ${DIM}Other  :${RESET} ${b}"
+  done
 
-  # Last 3 Commits
+  # ── Git Commits ───────────────────────────────────────────────────────────────
   echo
   echo "${BLUE}${BOLD}${SECTION} Git Commits${RESET}"
-  git log --oneline -3
-
-  # Diff vs BRANCH
-  echo
-  echo "${BLUE}${BOLD}${SECTION} Git Diff vs ${MAIN_BRANCH}${RESET}"
-  if git show-ref --verify --quiet refs/heads/main; then
-    git diff ${MAIN_BRANCH} --stat
+  COMMITS="$(git log --format='%H %s' -3 2>/dev/null)"
+  if [[ -z "$COMMITS" ]]; then
+    echo "  ${DIM}(no commits yet)${RESET}"
   else
-    echo "${DIM}  (no ${MAIN_BRANCH} branch)${RESET}"
+    FIRST=true
+    while IFS= read -r line; do
+      hash="${line:0:40}"
+      msg="${line:41}"
+      if $FIRST; then
+        echo "  ${DIM}${hash} :${RESET} ${NEON_GREEN}${BOLD}${msg}${RESET}"
+        FIRST=false
+      else
+        echo "  ${DIM}${hash} :${RESET} ${msg}"
+      fi
+    done <<< "$COMMITS"
   fi
 
-  # Fetch / Pull (conditional, at the end)
+  # ── Git Stash ─────────────────────────────────────────────────────────────────
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Stash${RESET}"
+  STASH_LIST="$(git stash list -n 3)"
+  if [[ -z "$STASH_LIST" ]]; then
+    echo "  ${DIM}(no stash entries)${RESET}"
+  else
+    COUNT=0
+    while IFS= read -r line; do
+      msg="$(echo "$line" | sed 's/.*: //')"
+      echo "  ${DIM}[$COUNT] :${RESET} ${msg}"
+      ((COUNT++)) || true
+    done <<< "$STASH_LIST"
+  fi
+
+  # ── Git Status ────────────────────────────────────────────────────────────────
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Status${RESET}"
+  if [[ -z "$(git status --short)" ]]; then
+    echo "  ${DIM}(working tree clean)${RESET}"
+  else
+    git -c color.status=always \
+        -c color.status.added="bold green" \
+        -c color.status.changed="red" \
+        -c color.status.untracked="bold green" \
+        -c color.status.unmerged="red" \
+        status --short | sed 's/^/  /'
+  fi
+
+  # ── Git Diff ──────────────────────────────────────────────────────────────────
+  echo
+  echo "${BLUE}${BOLD}${SECTION} Git Diff vs ${MAIN_BRANCH}${RESET}"
+  if ! git show-ref --verify --quiet refs/heads/${MAIN_BRANCH}; then
+    echo "  ${DIM}(no ${MAIN_BRANCH} branch)${RESET}"
+  else
+    DIFF_STAT="$(git diff ${MAIN_BRANCH} --numstat)"
+    if [[ -z "$DIFF_STAT" ]]; then
+      echo "  ${DIM}(no diff vs ${MAIN_BRANCH})${RESET}"
+    else
+      while IFS=$'\t' read -r added removed filepath; do
+        printf "  ${NEON_GREEN}%+4s${RESET} ${RED}%-4s${RESET} %s\n" "+${added}" "-${removed}" "${filepath}"
+      done <<< "$DIFF_STAT"
+    fi
+  fi
+
+  # ── Git Fetch ─────────────────────────────────────────────────────────────────
   if $DO_FETCH; then
     echo
     echo "${BLUE}${BOLD}${SECTION} Git Fetch${RESET}"
-    git fetch
+    FETCH_OUT="$(git fetch 2>&1)"
+    if [[ -z "$FETCH_OUT" ]]; then
+      echo "  ${DIM}(already up to date)${RESET}"
+    else
+      echo "$FETCH_OUT"
+    fi
   fi
+
+  # ── Git Pull ──────────────────────────────────────────────────────────────────
   if $DO_PULL; then
     echo
     echo "${BLUE}${BOLD}${SECTION} Git Pull${RESET}"
-    git pull
+    PULL_OUT="$(git pull 2>&1)"
+    if [[ -z "$PULL_OUT" ]] || [[ "$PULL_OUT" == *"Already up to date"* ]]; then
+      echo "  ${DIM}(already up to date)${RESET}"
+    else
+      echo "$PULL_OUT"
+    fi
   fi
 
 else
+  echo "${BLUE}${BOLD}${SECTION} Git Identity${RESET}"
+  echo "  ${DIM}Name  :${RESET} $(git config --global user.name  2>/dev/null || echo "${DIM}(not set)${RESET}")"
+  echo "  ${DIM}Email :${RESET} $(git config --global user.email 2>/dev/null || echo "${DIM}(not set)${RESET}")"
   echo
-  echo "⚠️  Not a Git repository"
+  echo "  ⚠️  Not a Git repository"
 fi
 
 echo "${DIM}─────────────────────────────────────────────────────────────────────────────────────${RESET}"
