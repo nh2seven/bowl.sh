@@ -25,11 +25,9 @@ SECTION="»"
 
 # ── Override Branches ──────────────────────────────────────────────────────────
 MAIN_BRANCH=main
-OVERRIDE_BRANCH=sprint-23
+OVERRIDE_BRANCH=override-branch-here
 OVERRIDE_PATHS=(
-  "/home/nh2seven/aiNions/Code/nion/agent"
-  # "/home/nh2seven/aiNions/Code/nion/consumer"
-  "/home/nh2seven/aiNions/Code/nion/controller"
+    # None
 )
 CURRENT_DIR="$(pwd)"
 
@@ -135,8 +133,11 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       echo "  ${DIM}(no diff vs ${MAIN_BRANCH})${RESET}"
     else
       while IFS=$'\t' read -r added removed filepath; do
-        printf "  ${NEON_GREEN}%+4s${RESET} ${RED}%-4s${RESET} %s\n" "+${added}" "-${removed}" "${filepath}"
+        printf "  ${NEON_GREEN}${BOLD}%+4s${RESET} ${RED}%-4s${RESET} %s\n" "+${added}" "-${removed}" "${filepath}"
       done <<< "$DIFF_STAT"
+      SHORTSTAT="$(git diff ${MAIN_BRANCH} --shortstat)"
+      echo
+      echo "  ${DIM}${SHORTSTAT## }${RESET}"
     fi
   fi
 
